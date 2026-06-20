@@ -7,7 +7,7 @@ format:
     orientation: columns
     nav-buttons:
       - icon: github
-        href: https://github.com/
+        href: https://github.com/Daini4K/Analsis-de-restaurantes-de-la-India
 lang: es
 theme: minty
 warning: false
@@ -326,9 +326,8 @@ leaflet(ciudades_precios) |>
 ### Row {height=60% .tabset}
 
 ```{r}
-#| title: "Distribución de calificaciones por estado"
+#| title: "Distribución de ratings por estado"
 #| fig-height: 280
-#| warning: false
 
 top_estados <- estados_resumen |>
   arrange(desc(n)) |>
@@ -343,7 +342,16 @@ grafico_box <- datos_box |>
   ggplot(aes(
     x = reorder(st_nm, Aggregate.rating, FUN = median),
     y = Aggregate.rating,
-    fill = st_nm
+    fill = st_nm,
+    text = paste0(
+      "Estado: ", st_nm, "\n",
+      "Rating: ", round(Aggregate.rating, 2), "\n",
+      "Mediana: ", round(median(Aggregate.rating), 2), "\n",
+      "Mínimo: ", round(min(Aggregate.rating), 2), "\n",
+      "Máximo: ", round(max(Aggregate.rating), 2), "\n",
+      "Restaurantes: ", n_distinct(Restaurant.Name), "\n",
+      "Costo promedio: ₹", round(mean(Average.Cost.for.two), 0)
+    )
   )) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +
   geom_jitter(width = 0.15, alpha = 0.2, size = 0.5) +
@@ -353,7 +361,17 @@ grafico_box <- datos_box |>
   theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggplotly(grafico_box, tooltip = "text") |>
-  config(locale = "es")
+  config(locale = "es") |>
+  layout(
+    hoverlabel = list(
+      bgcolor = "white",
+      font = list(size = 12, color = "black"),
+      bordercolor = "gray",
+      borderwidth = 1,
+      align = "left"
+    ),
+    margin = list(l = 50, r = 30, t = 60, b = 80)
+  )
 ```
 
 ```{r}
@@ -362,20 +380,39 @@ ggplotly(grafico_box, tooltip = "text") |>
 #| warning: false
 
 grafico_cocinas <- cocinas_resumen |>
+  mutate(
+    text = paste0(
+      "Cocina: ", Cuisines, "\n",
+      "Restaurantes: ", n, "\n",
+      "Rating promedio: ", round(rating_prom, 2), "\n",
+      "Participación: ", round(n / sum(n) * 100, 1), "% del total"
+    )
+  ) |>
   ggplot(aes(
     x = reorder(Cuisines, n),
     y = n,
-    fill = n
+    fill = n,
+    text = text
   )) +
   geom_col(alpha = 0.85) +
   coord_flip() +
   scale_fill_gradient(low = "#f39c12", high = "#2ecc71", name = "N° restaurantes") +
   labs(x = "Cocina", y = "Número de restaurantes", title = "Top 10 cocinas") +
   theme_minimal() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", plot.margin = margin(10, 10, 10, 10))
 
 ggplotly(grafico_cocinas, tooltip = "text") |>
-  config(locale = "es")
+  config(locale = "es") |>
+  layout(
+    hoverlabel = list(
+      bgcolor = "white",
+      font = list(size = 12, color = "black"),
+      bordercolor = "gray",
+      borderwidth = 1,
+      align = "left"
+    ),
+    margin = list(l = 80, r = 30, t = 60, b = 60)
+  )
 ```
 
 ```{r}
@@ -389,27 +426,44 @@ muestra <- restaurantes_india |>
   st_drop_geometry() |>
   sample_n(min(500, nrow(restaurantes_india)))
 
-correlacion <- cor(muestra$Average.Cost.for.two, muestra$Aggregate.rating, use = "complete.obs")
-
 grafico_scatter <- muestra |>
   ggplot(aes(
     x = Average.Cost.for.two,
     y = Aggregate.rating,
-    color = Aggregate.rating
+    color = Aggregate.rating,
+    size = Average.Cost.for.two,
+    text = paste0(
+      "Restaurante: ", Restaurant.Name, "\n",
+      "Ciudad: ", City, "\n",
+      "Estado: ", st_nm, "\n",
+      "Cocina: ", Cuisines, "\n",
+      "Costo: ₹", round(Average.Cost.for.two, 0), "\n",
+      "Rating: ", round(Aggregate.rating, 2), "\n",
+      "Votos: ", Votes
+    )
   )) +
   geom_point(alpha = 0.6) +
-  geom_smooth(method = "lm", se = TRUE, color = "#e74c3c") +
-  scale_color_gradient2(low = "#e74c3c", mid = "#f39c12", high = "#2ecc71", midpoint = 3.5) +
+  scale_color_gradient2(
+    low = "#e74c3c",
+    mid = "#f39c12",
+    high = "#2ecc71",
+    midpoint = 3.5,
+    name = "Rating"
+  ) +
+  scale_size_continuous(range = c(1, 5), guide = "none") +
   labs(
-    x = "Costo promedio (₹)",
+    x = "Costo promedio para dos (₹)",
     y = "Rating (1-5)",
-    title = paste("Costo vs Rating (correlación:", round(correlacion, 2), ")")
+    title = "Relación entre costo y rating"
   ) +
   theme_minimal() +
-  theme(legend.position = "none")
+  theme(legend.position = "right") +
+  xlim(0, 5000) +
+  ylim(0, 5)
 
 ggplotly(grafico_scatter, tooltip = "text") |>
-  config(locale = "es")
+  config(locale = "es") |>
+  layout(hoverlabel = list(bgcolor = "white", font = list(size = 12)))
 ```
 
 ### Row {height=40%}
