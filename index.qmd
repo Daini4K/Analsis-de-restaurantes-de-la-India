@@ -147,21 +147,21 @@ layout_column_wrap(
   value_box(
     title = "Total de restaurantes",
     value = scales::comma(total_rest),
-    icon = "shop",
+    showcase = bs_icon("shop"),
     theme = "pink"
   ),
   
   value_box(
     title = "Rating promedio",
     value = scales::number(rating_prom, accuracy = 0.01),
-    icon = "star-fill",
+    showcase = bs_icon("star-fill"),
     theme = "success"
   ),
   
   value_box(
     title = "Costo promedio (para dos)",
     value = paste0("₹", scales::number(costo_prom,)),
-    icon = "cash-stack",
+    showcase = bs_icon("cash-stack"),
     theme = "warning"
   )
 )
